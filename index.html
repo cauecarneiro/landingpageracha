@@ -1640,6 +1640,9 @@
         document.getElementById('step2')
       ];
       const floatCards = document.querySelectorAll('.float-card');
+      const floatCard1 = document.querySelector('.float-card-1');
+      const floatCard2 = document.querySelector('.float-card-2');
+      const floatCard3 = document.querySelector('.float-card-3');
 
       let rafId = null;
 
@@ -1660,9 +1663,16 @@
           const total = stage.offsetHeight - vh;
           const p = Math.min(1, Math.max(0, (-rect.top) / total));
 
+          // phone offset/size scale with viewport width so it doesn't collide with
+          // the floating cards (fixed px offsets only left enough margin on very wide screens)
+          const vw = window.innerWidth;
+          const xInFull = Math.min(380, vw * 0.198);
+          const xOutFull = Math.max(-235, -vw * 0.122);
+          const sizeScale = vw < 1920 ? Math.max(0.78, vw / 1920) : 1;
+
           const dockT = smoothstep(p, 0, 0.32);
-          const scale = lerp(1, 0.82, dockT);
-          const x = lerp(380, -235, dockT);
+          const scale = lerp(1, 0.82, dockT) * sizeScale;
+          const x = lerp(xInFull, xOutFull, dockT);
           phoneOuter.style.transform = 'translate(-50%,-50%) translateX(' + x + 'px) scale(' + scale + ')';
 
           // hero fade
@@ -1674,6 +1684,27 @@
           // scroll cue fade
           if (scrollCue) {
             scrollCue.style.opacity = String(1 - smoothstep(p, 0.02, 0.1));
+          }
+
+          // keep floating cards clear of the phone at every viewport size:
+          // anchor them off the phone's actual rendered edges instead of fixed vw/vh percentages
+          if (floatCard1 && floatCard2 && floatCard3) {
+            const margin = 20;
+            const phoneRect = phoneOuter.getBoundingClientRect();
+
+            const c1w = floatCard1.firstElementChild.offsetWidth;
+            const c1Left = Math.min(vw * 0.47, phoneRect.left - margin - c1w);
+            floatCard1.style.left = c1Left + 'px';
+            floatCard1.style.top = (vh * 0.21) + 'px';
+
+            const c2Left = Math.max(phoneRect.right + margin, vw - vw * 0.14 - floatCard2.firstElementChild.offsetWidth);
+            floatCard2.style.left = c2Left + 'px';
+            floatCard2.style.top = (vh * 0.42) + 'px';
+
+            const c3w = floatCard3.firstElementChild.offsetWidth;
+            const c3Left = Math.max(phoneRect.right + margin, vw - vw * 0.21 - c3w);
+            floatCard3.style.left = c3Left + 'px';
+            floatCard3.style.top = Math.min(vh * 0.78, vh - margin - 60) + 'px';
           }
 
           // floating cards parallax + fade
